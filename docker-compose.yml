@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  telegram-proxy:
+    image: nginx:1.25-alpine
+    container_name: telegram-proxy
+    restart: unless-stopped
+    ports:
+      - "443:443"
+    environment:
+      - CORP_DOMAIN=${CORP_DOMAIN}
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/letsencrypt/live/${CORP_DOMAIN}:ro
+      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
+    command: >
+      /bin/sh -c "
+        envsubst '$${CORP_DOMAIN}' < /etc/nginx/conf.d/default.conf > /tmp/nginx.conf &&
+        cp /tmp/nginx.conf /etc/nginx/conf.d/default.conf &&
+        nginx -g 'daemon off;'
+      "
